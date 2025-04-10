@@ -47,8 +47,7 @@
   </div>
 
   <script>
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5IbOLo88NXWdBT0XjFo5ey9GBDGB83LjgOATBpi2BBZxai0ZaTzELw-W75PGNES9XcVn--vLiAL47/pub?output=csv";
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(sheetUrl)}`;
+    const jsonUrl = "versek.json";
 
     function analyzeMood(text) {
       const moodMap = {
@@ -90,24 +89,16 @@
       const key = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
       try {
-        const response = await fetch(proxyUrl);
+        const response = await fetch(jsonUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.text();
-        const rows = data.split('\n').map(row => row.split(','));
-        const headers = rows[0];
-        const dateIndex = headers.indexOf('dátum');
-        const titleIndex = headers.indexOf('cím');
-        const authorIndex = headers.indexOf('szerző');
-        const textIndex = headers.indexOf('szöveg');
+        const poems = await response.json();
 
-        const match = rows.find((row, i) => i > 0 && row[dateIndex] === key);
+        const match = poems.find(poem => poem.dátum === key);
 
         if (match) {
-          const title = match[titleIndex];
-          const author = match[authorIndex];
-          const text = match[textIndex];
+          const { cím, szerző, szöveg } = match;
 
-          const bgColor = analyzeMood(text);
+          const bgColor = analyzeMood(szöveg);
           const textColor = getTextColor(bgColor);
 
           document.body.style.backgroundColor = bgColor;
@@ -115,16 +106,16 @@
           document.querySelector('.title').style.color = textColor;
           document.querySelector('.author').style.color = textColor;
 
-          document.getElementById('title').textContent = title;
-          document.getElementById('author').textContent = author;
-          document.getElementById('verse').textContent = text;
+          document.getElementById('title').textContent = cím;
+          document.getElementById('author').textContent = szerző;
+          document.getElementById('verse').textContent = szöveg;
         } else {
           document.getElementById('title').textContent = 'Nincs vers';
           document.getElementById('author').textContent = '';
           document.getElementById('verse').textContent = 'Erre a napra nincs bejegyzett vers.';
         }
       } catch (error) {
-        console.error('Hiba a CSV betöltésénél:', error);
+        console.error('Hiba a JSON betöltésénél:', error);
         document.getElementById('title').textContent = 'Hiba';
         document.getElementById('author').textContent = '';
         document.getElementById('verse').textContent = 'Nem sikerült betölteni az adatokat.';
